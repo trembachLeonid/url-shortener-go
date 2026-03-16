@@ -1,0 +1,41 @@
+# Binary builds
+# Selected for common OS/Architecture patterns
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Specific binary output (if you name your binary 'main' or 'app')
+bin/
+main
+app
+
+# Test related
+*.test
+*.out
+# Coverage tool output
+coverage.txt
+c.out
+
+# Dependency directories (Only needed if you don't use Go Modules,
+# but generally safe to ignore if you prefer keeping vendor out of git)
+# vendor/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# IDE / Editor specific
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
