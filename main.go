@@ -1,15 +1,25 @@
 package main
 
 import (
-	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	// Create a Gin router with default middleware (logger and recovery)
+	r := gin.Default()
 
-	s := "gopher"
-	fmt.Printf("Hello and welcome, %s!\n", s)
+	r.GET("/ping", func(c *gin.Context) {
 
-	for i := 1; i <= 5; i++ {
-		fmt.Println("i =", 100/i)
+		c.JSON(http.StatusOK, gin.H{
+			"message": "pong",
+		})
+	})
+
+	err := r.Run()
+
+	if err != nil {
+		panic(err)
 	}
 }
