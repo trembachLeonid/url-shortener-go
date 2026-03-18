@@ -3,8 +3,10 @@ package main
 import (
 	"net/http"
 	"time"
+	"url-shortener/internal/base62"
 	"url-shortener/internal/helpers"
 	"url-shortener/internal/models"
+	"url-shortener/internal/persistence"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,11 +33,24 @@ func main() {
 			})
 		}
 
-		timeNow := time.Now()
-		timeNow.Add(*time.Second)
+		var timeNow time.Time
+		if request.ExpireTime != nil {
+			timeNow = time.Now()
+			timeNow = timeNow.Add(time.Duration(*request.ExpireTime) * time.Second)
+		}
+
+		urlId, err := persistence.InsertURL(normalizedURL, &timeNow)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		shortUrl := base62.ToBase62(urlId)
 
 		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
+			"short_url": shortUrl,
 		})
 	})
 

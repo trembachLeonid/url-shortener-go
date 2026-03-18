@@ -4,7 +4,7 @@ import "strings"
 
 const base62Chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-func ToBase62(numToHash int64) string {
+func ToBase62(numToHash int32) string {
 	base62Builder := strings.Builder{}
 	base62Builder.Grow(6)
 
