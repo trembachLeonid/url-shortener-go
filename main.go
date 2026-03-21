@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/sha256"
 	"log"
 	"net/http"
+	"os"
 	"time"
 	"url-shortener/internal/base62"
 	"url-shortener/internal/helpers"
@@ -12,6 +14,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
+
+var base62Secret = []byte(os.Getenv("BASE62_SECRET"))
 
 func main() {
 	// Create a Gin router with default middleware (logger and recovery)
@@ -45,28 +49,39 @@ func main() {
 		}
 
 		log.Printf("CREATE URL >> URL: %s, Expire time: %v", normalizedURL, request.ExpireTime)
-		urlId, err := persistence.InsertURL(normalizedURL, timeNow)
+
+		for i := 0; i < 10; i++ {
+			urlId, err := persistence.InsertURL(normalizedURL, timeNow)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
+				return
+			}
+
+			idInBytes := helpers.Int32ToBytes(urlId)
+			toHash := append(idInBytes, base62Secret...)
+			hashed := sha256.Sum256(toHash)
+			shortURL := base62.ToBase62(hashed[:6])
+
+			if exists, err := persistence.ShortURLExists(shortURL); !exists && err == nil {
+				err = persistence.SetShortURL(urlId, shortURL)
+
+				c.JSON(http.StatusOK, gin.H{
+					"short_url": shortURL,
+				})
+				return
+			} else if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			}
+		}
+
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
 			})
 			return
 		}
-
-		shortUrl := base62.ToBase62(urlId)
-
-		err = persistence.SetShortURL(urlId, shortUrl)
-
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"short_url": shortUrl,
-		})
 	})
 
 	router.GET("/:shortUrl", func(c *gin.Context) {

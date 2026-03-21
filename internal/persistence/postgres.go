@@ -54,3 +54,16 @@ func GetURL(shortURL string) (originalURL string, expireTime *time.Time, err err
 
 	return
 }
+
+func ShortURLExists(shortURL string) (bool, error) {
+	conn, err := connect()
+	if err != nil {
+		return true, err
+	}
+	defer conn.Close()
+
+	exists := false
+	err = conn.QueryRow("SELECT EXISTS(SELECT 1 FROM urls WHERE short_url = $1);", shortURL).Scan(&exists)
+
+	return exists, err
+}

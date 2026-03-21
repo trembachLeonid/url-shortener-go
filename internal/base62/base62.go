@@ -1,20 +1,28 @@
 package base62
 
-import "strings"
+import (
+	"math/big"
+)
 
 const base62Chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-func ToBase62(numToHash int32) string {
-	base62Builder := strings.Builder{}
-	base62Builder.Grow(6)
-
-	for numToHash > 0 {
-		reminder := numToHash % 62
-
-		base62Builder.WriteByte(base62Chars[reminder])
-
-		numToHash /= 62
+func ToBase62(data []byte) string {
+	num := new(big.Int).SetBytes(data)
+	if num.Cmp(big.NewInt(0)) == 0 {
+		return string(base62Chars[0])
 	}
 
-	return base62Builder.String()
+	base := big.NewInt(62)
+	result := ""
+
+	for num.Cmp(big.NewInt(0)) > 0 && len(result) < 9 {
+		remainder := new(big.Int)
+		num.DivMod(num, base, remainder)
+		result = string(base62Chars[remainder.Int64()]) + result
+	}
+
+	if len(result) < 8 {
+		result = "0" + result
+	}
+	return result
 }
