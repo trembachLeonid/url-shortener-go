@@ -20,7 +20,7 @@ func NormalizeURL(rawURL string) (string, error) {
 		url.Host = strings.Split(url.Host, ":")[0]
 	}
 
-	if url.Path[len(url.Path)-1] == '/' {
+	if len(url.Path) > 0 && url.Path[len(url.Path)-1] == '/' {
 		url.Path += "/"
 	}
 

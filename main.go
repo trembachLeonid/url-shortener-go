@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"time"
 	"url-shortener/internal/base62"
@@ -9,11 +10,14 @@ import (
 	"url-shortener/internal/persistence"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
 	// Create a Gin router with default middleware (logger and recovery)
 	router := gin.Default()
+
+	err := godotenv.Load()
 
 	router.POST("/url", func(c *gin.Context) {
 		var request models.ShortenURLRequest
@@ -35,7 +39,7 @@ func main() {
 
 		var timeNow time.Time
 		if request.ExpireTime != nil {
-			timeNow = time.Now()
+			timeNow = time.Now().UTC()
 			timeNow = timeNow.Add(time.Duration(*request.ExpireTime) * time.Second)
 		}
 
@@ -49,12 +53,38 @@ func main() {
 
 		shortUrl := base62.ToBase62(urlId)
 
+		err = persistence.SetShortURL(urlId, shortUrl)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"short_url": shortUrl,
 		})
 	})
 
-	err := router.Run()
+	router.GET("/:shortUrl", func(c *gin.Context) {
+		shortUrl := c.Param("shortUrl")
+
+		originalURL, expireTime, err := persistence.GetURL(shortUrl)
+
+		log.Printf("Original URL: %s, Expire Time: %v", originalURL, expireTime)
+
+		if err != nil || (expireTime != nil && expireTime.Before(time.Now().UTC())) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "URL not found",
+			})
+			return
+		}
+
+		c.Redirect(http.StatusTemporaryRedirect, originalURL)
+	})
+
+	err = router.Run()
 
 	if err != nil {
 		panic(err)

@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"os"
 	"time"
+
+	_ "github.com/lib/pq"
 )
 
 func connect() (*sql.DB, error) {
@@ -21,7 +23,7 @@ func InsertURL(originalURL string, expireTime *time.Time) (int32, error) {
 
 	id := int32(0)
 	err = conn.QueryRow(
-		`INSERT INTO urls (original_url, expiration_time) VALUES ($1, $2) RETURNING id`,
+		`INSERT INTO urls (original_url, expire_time) VALUES ($1, $2) RETURNING id`,
 		originalURL, expireTime).Scan(&id)
 
 	return id, err
@@ -37,4 +39,18 @@ func SetShortURL(id int32, shortURL string) error {
 	err = conn.QueryRow("UPDATE urls SET short_url = $1 WHERE id = $2", shortURL, id).Err()
 
 	return err
+}
+
+func GetURL(shortURL string) (originalURL string, expireTime *time.Time, err error) {
+	conn, err := connect()
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	originalURL = ""
+	expireTime = nil
+	err = conn.QueryRow("SELECT original_url, expire_time FROM urls WHERE short_url = $1", shortURL).Scan(&originalURL, &expireTime)
+
+	return
 }
