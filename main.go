@@ -37,13 +37,15 @@ func main() {
 			})
 		}
 
-		var timeNow time.Time
+		var timeNow *time.Time
 		if request.ExpireTime != nil {
-			timeNow = time.Now().UTC()
-			timeNow = timeNow.Add(time.Duration(*request.ExpireTime) * time.Second)
+			log.Printf("CREATE URL >> Expire time: %v", request.ExpireTime)
+			expireTime := time.Now().UTC().Add(time.Duration(*request.ExpireTime) * time.Second)
+			timeNow = &expireTime
 		}
 
-		urlId, err := persistence.InsertURL(normalizedURL, &timeNow)
+		log.Printf("CREATE URL >> URL: %s, Expire time: %v", normalizedURL, request.ExpireTime)
+		urlId, err := persistence.InsertURL(normalizedURL, timeNow)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
