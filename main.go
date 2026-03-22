@@ -16,6 +16,7 @@ import (
 )
 
 var base62Secret = []byte(os.Getenv("BASE62_SECRET"))
+var hostURL = os.Getenv("HOST_URL")
 
 func main() {
 	// Create a Gin router with default middleware (logger and recovery)
@@ -66,9 +67,9 @@ func main() {
 
 			if exists, err := persistence.ShortURLExists(shortURL); !exists && err == nil {
 				err = persistence.SetShortURL(urlId, shortURL)
-
+				result := hostURL + shortURL
 				c.JSON(http.StatusOK, gin.H{
-					"short_url": shortURL,
+					"short_url": result,
 				})
 				return
 			} else if err != nil {

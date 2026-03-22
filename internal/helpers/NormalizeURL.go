@@ -1,14 +1,16 @@
 package helpers
 
 import (
+	"fmt"
 	urlUtil "net/url"
 	"strings"
 )
 
 func NormalizeURL(rawURL string) (string, error) {
+
 	url, err := urlUtil.Parse(rawURL)
-	if err != nil {
-		return "", err
+	if err != nil || url.Scheme == "" || url.Host == "" {
+		return "", fmt.Errorf("NormalizeURL >> Invalid URL: %s", rawURL)
 	}
 
 	url.Scheme = strings.ToLower(url.Scheme)
